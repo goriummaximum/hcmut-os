@@ -21,7 +21,7 @@ struct pcb_t * dequeue(struct queue_t * q) {
 
 	//find highest priority proc
 	uint32_t priority_max = q->proc[0]->priority;
-	for (unsigned short i = 1; i < q->size; i++)
+	for (int i = 1; i < q->size; i++)
 	{
 		if (q->proc[i]->priority > priority_max)
 		{
@@ -30,10 +30,12 @@ struct pcb_t * dequeue(struct queue_t * q) {
 	}
 
 	//return highest priority proc
-	for (unsigned short i = 1; i < q->size; i++)
+	for (int i = 1; i < q->size; i++)
 	{
 		if (q->proc[i]->priority == priority_max)
 		{
+			/*
+			//solution 1
 			//copy
 			struct pcb_t *return_proc = (struct pcb_t *)malloc(sizeof(struct pcb_t));
 			return_proc->pid = q->proc[i]->pid;
@@ -46,21 +48,32 @@ struct pcb_t * dequeue(struct queue_t * q) {
 			return_proc->code->text->arg_2 = q->proc[i]->code->text->arg_2;
 			return_proc->code->text->opcode = q->proc[i]->code->text->opcode;
 
-			for (unsigned short j = 0; j < 10; j++)
+			for (int j = 0; j < 10; j++)
 				return_proc->regs[j] = q->proc[i]->regs[j];
 
 			return_proc->pc = q->proc[i]->pc;
 
 			return_proc->seg_table = (struct seg_table_t *)malloc(sizeof(struct seg_table_t));
 			return_proc->seg_table->size = q->proc[i]->seg_table->size;
-			for (unsigned short j = 0; j < (1 << SEGMENT_LEN); j++) 
+			for (int j = 0; j < (1 << SEGMENT_LEN); j++) 
 				return_proc->seg_table->table[j] = q->proc[i]->seg_table->table[j];
 
 			return_proc->bp = q->proc[i]->bp;
-
+			
 			//delete
 			free(q->proc[i]);
-			for (unsigned short j = i; j < q->size - 1; j++)
+			for (int j = i; j < q->size - 1; j++)
+				q->proc[j] = q->proc[j + 1];
+			q->proc[q->size - 1] = NULL;
+			q->size--;
+
+			return return_proc;
+			*/
+
+			//solution 2
+			struct pcb_t *return_proc = q->proc[i];
+			q->proc[i] = NULL;
+			for (int j = i; j < q->size - 1; j++)
 				q->proc[j] = q->proc[j + 1];
 			q->proc[q->size - 1] = NULL;
 			q->size--;
