@@ -23,19 +23,28 @@ void init_mem(void) {
 	pthread_mutex_init(&mem_lock, NULL);
 }
 
+
+/* Segmentation with paging mechanism: 
+	1. Break the address into 3 parts: Address = Segment + Index + Offset
+	2. Use segment index to find the page table entry No. x (x = 1,2,3,...)
+	2. Obtain a page table from the segment, use page index to find the frame containing index of physical address
+	3. Get the index of physical address in page table, concatenate with the offset: | p_index | offset |
+	4. The result | index | offset | is the translated physical address that will mapped into the physical memory
+*/
+
 /* get offset of the virtual address */
 static addr_t get_offset(addr_t addr) {
-	return addr & ~((~0U) << OFFSET_LEN);
+	return addr & ~((~0U) << OFFSET_LEN); // Offset <-> 10 bits
 }
 
 /* get the first layer index */
 static addr_t get_first_lv(addr_t addr) {
-	return addr >> (OFFSET_LEN + PAGE_LEN);
+	return addr >> (OFFSET_LEN + PAGE_LEN); // Segment index <-> 5 bits
 }
 
 /* get the second layer index */
 static addr_t get_second_lv(addr_t addr) {
-	return (addr >> OFFSET_LEN) - (get_first_lv(addr) << PAGE_LEN);
+	return (addr >> OFFSET_LEN) - (get_first_lv(addr) << PAGE_LEN); // Page index <-> 5 bits
 }
 
 /* Search for page table table from the a segment table */
@@ -52,7 +61,9 @@ static struct page_table_t * get_page_table(
 
 	int i;
 	for (i = 0; i < seg_table->size; i++) {
-		// Enter your code here
+		if (seg_table->table[i].v_index == index) { 
+			return seg_table->table[i].pages; // Return the page table from the segment index
+		}
 	}
 	return NULL;
 
@@ -67,15 +78,17 @@ static int translate(
 		struct pcb_t * proc) {  // Process uses given virtual address
 
 	/* Offset of the virtual address */
-	addr_t offset = get_offset(virtual_addr);
+	addr_t offset = get_offset(virtual_addr); // Offset <-> 10 bits
 	/* The first layer index */
-	addr_t first_lv = get_first_lv(virtual_addr);
+	addr_t first_lv = get_first_lv(virtual_addr); // Segment index <-> 5 bits
 	/* The second layer index */
-	addr_t second_lv = get_second_lv(virtual_addr);
+	addr_t second_lv = get_second_lv(virtual_addr); // Page index <-> 5 bits
 	
 	/* Search in the first level */
 	struct page_table_t * page_table = NULL;
-	page_table = get_page_table(first_lv, proc->seg_table);
+	page_table = get_page_table(first_lv, proc->seg_table); 
+	/*^ By using the first_lvl which is the segment index, we can find the page table
+		corresponding to it and then use the page table for the later process*/
 	if (page_table == NULL) {
 		return 0;
 	}
@@ -83,10 +96,19 @@ static int translate(
 	int i;
 	for (i = 0; i < page_table->size; i++) {
 		if (page_table->table[i].v_index == second_lv) {
+
+			/* The second_lvl is the page index, that will used along with page base number
+			   to find the correct frame number in page table of the corresponding segment */
+
+			/* In short: It it used to find the frame number in page table
+
 			/* TODO: Concatenate the offset of the virtual addess
 			 * to [p_index] field of page_table->table[i] to 
 			 * produce the correct physical address and save it to
 			 * [*physical_addr]  */
+
+			addr_t physical_index = page_table->table[i].p_index;
+			* physical_addr = (physical_index << OFFSET_LEN) | offset; // Concatenate and save to p_addr
 			return 1;
 		}
 	}
