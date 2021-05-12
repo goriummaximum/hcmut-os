@@ -30,7 +30,7 @@ struct pcb_t * dequeue(struct queue_t * q) {
 	}
 
 	//return highest priority proc
-	for (int i = 1; i < q->size; i++)
+	for (int i = 0; i < q->size; i++)
 	{
 		if (q->proc[i]->priority == priority_max)
 		{
