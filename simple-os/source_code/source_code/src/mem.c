@@ -100,7 +100,7 @@ static int translate(
 			/* The second_lvl is the page index, that will used along with page base number
 			   to find the correct frame number in page table of the corresponding segment */
 
-			/* In short: It it used to find the frame number in page table
+			/* In short: It it used to find the frame number in page table */
 
 			/* TODO: Concatenate the offset of the virtual addess
 			 * to [p_index] field of page_table->table[i] to 
@@ -135,17 +135,78 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 	 * to know whether this page has been used by a process.
 	 * For virtual memory space, check bp (break pointer).
 	 * */
+
+	// Check free page (page with proc == 0) in physical memory
+	int count_page = 0;
+	for (int i = 0; i < NUM_PAGES; i++) {
+		if (_mem_stat[i].proc == 0) {
+			count_page+=1;
+			if (count_page == num_pages) {
+				break;
+			}
+		}
+	}
+
+	if (count_page < num_pages) mem_avail = 0; // Not enough space to allocate new memory region
+	
+	// Check free space in virtual memory
+	else if (proc->bp + num_pages*PAGE_SIZE >= RAM_SIZE) mem_avail = 0; // Not enough RAM for allocating
+
+	else mem_avail = 1;
+
 	
 	if (mem_avail) {
 		/* We could allocate new memory region to the process */
-		ret_mem = proc->bp;
+
+		ret_mem = proc->bp; // Save the first byte of page to ret_mem
 		proc->bp += num_pages * PAGE_SIZE;
+
 		/* Update status of physical pages which will be allocated
 		 * to [proc] in _mem_stat. Tasks to do:
 		 * 	- Update [proc], [index], and [next] field
-		 * 	- Add entries to segment table page tables of [proc]
+		 * 	- Add entries to segment table and page tables of [proc]
 		 * 	  to ensure accesses to allocated memory slot is
 		 * 	  valid. */
+
+		int alloc_count_page = 0;
+		int last_page = -1; // The tail of page list
+		for (int i = 0; i < NUM_PAGES; i++) {
+			// There is value in proc, which means the page is used => SKIP
+			if (_mem_stat[i].proc) continue;
+
+			// Otherwise, update the proc, index and next field
+			_mem_stat[i].proc = proc->pid; // Update proc
+			_mem_stat[i].index = alloc_count_page; // Update index
+
+			if (last_page > -1) {
+				// Condition when the current page is not the initial page
+				// (because after initial page, [last_page] value will be different from -1)
+
+				_mem_stat[last_page].next = i; // Update the [next] field of the previous page
+			}
+			last_page = i; // Save the index of the previous page
+
+			// Add entries to segment table(1) and page table(2) (to be updated)
+
+			// Find virual page table from segment
+			addr_t v_address = ret_mem + alloc_count_page * PAGE_SIZE; // Virtual address 
+			addr_t v_segment = get_first_lv(v_address); // Get the segment index (5 bits)
+			struct page_table_t * virtual_page_table = NULL; // Initialize new temporary page table
+			virtual_page_table = get_page_table(v_segment, proc->seg_table); // Get the virtual page table entries from segment
+			
+
+			// Note: If there is no virtual page table found from above command
+			//  -> Create a new page table in the segment table
+
+
+			alloc_count_page+=1;
+
+			if (alloc_count_page == num_pages) { // Allocation reach its maximum
+				_mem_stat[i].next = -1;
+				break;
+			}
+		}
+		
 	}
 	pthread_mutex_unlock(&mem_lock);
 	return ret_mem;
