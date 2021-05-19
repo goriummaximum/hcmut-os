@@ -221,6 +221,22 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 	 * 	  the process [proc].
 	 * 	- Remember to use lock to protect the memory from other
 	 * 	  processes.  */
+	pthread_mutex_lock(&mem_lock);
+	
+	//Free Physical mem
+	addr_t p_index = 0 >> OFFSET_LEN;
+	while(_mem_stat[p_index].next != -1) //Iterate through physical memory
+	{
+		_mem_stat[p_index].proc = 0; // set the [proc] value in _mem_stat to 0 to indicate that it is free
+		p_index = _mem_stat[p_index].next; 
+	}
+
+	//Free Virtual mem
+	
+
+
+
+	pthread_mutex_unlock(&mem_lock);
 	return 0;
 }
 
