@@ -162,7 +162,7 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 			{
 				//Update [proc], [index], and [next] field
 				_mem_stat[i].proc = proc->pid;
-				_mem_stat[i].index = i;
+				_mem_stat[i].index = curr_page;
 				if (prev_mem_index != -1)
 					_mem_stat[prev_mem_index].next = i;
 				prev_mem_index = i;
@@ -181,7 +181,7 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 
 					int second_lv_last = located_seg_table->table[first_lv_last].pages->size;
 					located_seg_table->table[first_lv_last].pages->table[second_lv_last].v_index = get_second_lv(cur_vir_addr);
-					located_seg_table->table[first_lv_last].pages->table[second_lv_last].p_index = i;//_mem_stat[i].index;
+					located_seg_table->table[first_lv_last].pages->table[second_lv_last].p_index = i;
 					located_seg_table->table[first_lv_last].pages->size++;
 					//printf("alloc 	first lv: %x	second lv: %x 	curr_page: %d\n", proc->seg_table->table[first_lv_last].v_index, proc->seg_table->table[first_lv_last].pages->table[second_lv_last].v_index, curr_page);
 				}
@@ -189,7 +189,7 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 				else
 				{
 					located_page_table->table[located_page_table->size].v_index = get_second_lv(cur_vir_addr);
-					located_page_table->table[located_page_table->size].p_index = i;//_mem_stat[i].index;
+					located_page_table->table[located_page_table->size].p_index = i;
 					located_page_table->size++;
 					//printf("alloc 	first lv: %x	second lv: %x	curr_page: %d\n", proc->seg_table->table[0].v_index, proc->seg_table->table[0].pages->table[proc->seg_table->table[0].pages->size - 1].v_index, curr_page);
 				}
