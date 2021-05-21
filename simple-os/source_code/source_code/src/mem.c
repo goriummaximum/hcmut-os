@@ -222,16 +222,24 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 	 * 	- Remember to use lock to protect the memory from other
 	 * 	  processes.  */
 	pthread_mutex_lock(&mem_lock);
-	
-	//Free Physical mem
-	addr_t p_index = 0 >> OFFSET_LEN;
-	while(_mem_stat[p_index].next != -1) //Iterate through physical memory
+
+	addr_t pAddress = 0; //physical address need to be freed
+	addr_t vAddress = address; //virtual address need to be freed
+
+	//Check if the virtual address is valid or not, 
+	//return 1 if not valid
+	if(!translate(vAddress, &pAddress, proc)) 
+		return 1;
+
+	//Free Physical Page
+	addr_t pIndex = pAddress >> OFFSET_LEN;
+	while(_mem_stat[pIndex].next != -1) //Iterate through physical memory
 	{
-		_mem_stat[p_index].proc = 0; // set the [proc] value in _mem_stat to 0 to indicate that it is free
-		p_index = _mem_stat[p_index].next; 
+		_mem_stat[pIndex].proc = 0; // set the [proc] value in _mem_stat to 0 to indicate that it is free
+		pIndex = _mem_stat[pIndex].next; 
 	}
 
-	//Free Virtual mem
+	//Free Virtual Page
 	
 
 
