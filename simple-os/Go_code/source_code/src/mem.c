@@ -234,7 +234,7 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 		num_pages++;
 	}
 
-	if (address == proc->bp)
+	if (address + num_pages * PAGE_SIZE == proc->bp)
 		proc->bp = proc->bp - num_pages * PAGE_SIZE;
 
 	int curr_page = 0;
