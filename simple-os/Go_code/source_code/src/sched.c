@@ -19,11 +19,10 @@ void init_scheduler(void) {
 
 struct pcb_t * get_proc(void) {
 	struct pcb_t * proc = NULL;
-	/*TODO: get a process from [ready_queue]. If ready queue
-	 * is empty, push all processes in [run_queue] back to
-	 * [ready_queue] and return the highest priority one.
-	 * Remember to use lock to protect the queue.
-	 * */
+	//TODO: get a process from [ready_queue]. If ready queue
+	 //is empty, push all processes in [run_queue] back to
+	 //[ready_queue] and return the highest priority one.
+	 //Remember to use lock to protect the queue.
 	
 	//process ready queue empty
 	if (empty(&ready_queue))

@@ -59,13 +59,13 @@ static void * timer_routine(void * args) {
 }
 
 void next_slot(struct timer_id_t * timer_id) {
-	/* Tell to timer that we have done our job in current slot */
+	// Tell to timer that we have done our job in current slot
 	pthread_mutex_lock(&timer_id->event_lock);
 	timer_id->done = 1;
 	pthread_cond_signal(&timer_id->event_cond);
 	pthread_mutex_unlock(&timer_id->event_lock);
 
-	/* Wait for going to next slot */
+	// Wait for going to next slot
 	pthread_mutex_lock(&timer_id->timer_lock);
 	while (timer_id->done) {
 		pthread_cond_wait(

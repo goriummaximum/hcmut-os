@@ -100,7 +100,7 @@ static int translate(
 			/* The second_lvl is the page index, that will used along with page base number
 			   to find the correct frame number in page table of the corresponding segment */
 
-			/* In short: It it used to find the frame number in page table
+			/* In short: It it used to find the frame number in page table */
 
 			/* TODO: Concatenate the offset of the virtual addess
 			 * to [p_index] field of page_table->table[i] to 
@@ -153,7 +153,7 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 		 * 	- Add entries to segment table page tables of [proc]
 		 * 	  to ensure accesses to allocated memory slot is
 		 * 	  valid. */
-
+		//printf("ret_mem: %x\n", ret_mem);
 		int curr_page = 0;
 		int prev_mem_index = -1;
 		for (int i = 0; i < NUM_PAGES; i++)
@@ -209,7 +209,7 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 
 int free_mem(addr_t address, struct pcb_t * proc) {
 	/*TODO: Release memory region allocated by [proc]. The first byte of
-	 * this region is indicated by [address]. Task to do:
+	  this region is indicated by [address]. Task to do:
 	 * 	- Set flag [proc] of physical page use by the memory block
 	 * 	  back to zero to indicate that it is free.
 	 * 	- Remove unused entries in segment table and page tables of
@@ -225,6 +225,7 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 		pthread_mutex_unlock(&mem_lock);
 		return 0;
 	}
+
 	int num_pages = 0;
 
 	for (int i = get_second_lv(phy_addr); i != -1; i = _mem_stat[i].next)
@@ -232,8 +233,9 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 		_mem_stat[i].proc = 0;
 		num_pages++;
 	}
-	
-	proc->bp = proc->bp - num_pages * PAGE_SIZE;
+
+	if (address == proc->bp)
+		proc->bp = proc->bp - num_pages * PAGE_SIZE - PAGE_SIZE;
 
 	int curr_page = 0;
 	while (curr_page < num_pages)
@@ -243,7 +245,8 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 		//printf("free 	first lv: %x	second lv: %x	curr_page: %d\n", vir_first_lv, vir_second_lv, curr_page);
 		struct page_table_t *page_table = get_page_table(vir_first_lv, proc->seg_table);
 		for (int i = 0; i < page_table->size; i++)
-		{
+		{	
+			//delete one row of page table
 			if (vir_second_lv == page_table->table[i].v_index)
 			{
 				for (int j = i; j < page_table->size - 1; j++)
@@ -254,6 +257,7 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 
 				page_table->size--;
 
+				//if page table is empty, delete page table
 				if (page_table->size == 0)
 				{
 					free(page_table);
@@ -265,6 +269,7 @@ int free_mem(addr_t address, struct pcb_t * proc) {
 					proc->seg_table->table[proc->seg_table->size - 1].pages = NULL;
 					proc->seg_table->size--;
 				}
+
 				i--;
 			}
 		}
