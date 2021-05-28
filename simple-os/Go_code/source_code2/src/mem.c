@@ -146,6 +146,7 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 	if (mem_avail) {
 		/* We could allocate new memory region to the process */
 		ret_mem = proc->bp;
+		//printf("seg_idx: %x		page_idx: %x	\n", get_first_lv(ret_mem), get_second_lv(ret_mem));
 		int num_seg_entries = num_pages % (1 << PAGE_LEN) ? num_pages / (1 << PAGE_LEN) + 1 : num_pages / (1 << PAGE_LEN);
 		proc->bp += num_seg_entries * (1 << PAGE_LEN) * PAGE_SIZE; //offset n segment
 		/* Update status of physical pages which will be allocated
